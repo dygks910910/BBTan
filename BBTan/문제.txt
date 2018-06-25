@@ -1,7 +1,0 @@
-
-깨지는 이펙트만들기.
-블럭이 어떤식으로 내려올건지 고민해보기.
-
-
-공이 속도가 빠를경우엔 충돌면을 안쪽으로 인식해버리는 문제가 있음.
-	-FixedUpdate()내에서 rigidbody.MovePosition()을 사용하고 rigidBody옵션에서 CollisionDetection = continues로 해결.
