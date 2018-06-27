@@ -25,7 +25,7 @@ public class move : MonoBehaviour {
         if (hit)
         {
             
-            CollisionShapeInteraction tmp = hit.collider.GetComponent<CollisionShapeInteraction>();
+            ShapeInteraction tmp = hit.collider.GetComponent<ShapeInteraction>();
             if(tmp)
             {
                 tmp.Hit();
