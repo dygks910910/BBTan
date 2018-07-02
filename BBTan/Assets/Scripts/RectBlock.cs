@@ -12,7 +12,8 @@ public class RectBlock : Shape
         spRenderer.color = Color.red;
         hpWeight = 0.92f / hp;
         gameObject.AddComponent<BoxCollider2D>();
-        hit = new ShapeHit();
+        hit = gameObject.AddComponent<ShapeHit>();
+        GetComponentInChildren<TextMesh>().text = hp.ToString();
     }
     
 }
