@@ -8,6 +8,11 @@ public class GameManager : MonoBehaviour
 
     public ScoreManager scoreMgr;
 
+    #region Arrow
+    public GameObject arrow;
+    public BigScale guideLineScale;
+    public Vector3 arrowDirection;
+    #endregion
     public enum GAME_STATUS
     {
         IDLE,
@@ -16,19 +21,28 @@ public class GameManager : MonoBehaviour
     }
 
     GameObject ballPrefab;
+    move moveScript;
+
     GameObject boxPrefab;
 
 
     public GAME_STATUS gameStatus;
     #region val
-
+    public Vector2 nowPos, prePos;
     [SerializeField]
     public List<GameObject> shapeList;
-    public List<GameObject> ballList;
+
+    #region ball Value
+    public short ballCount;
     //첫 낙하지점.
-    Vector3 firstFalledBallPos;
+    public Vector3 firstFalledBallPos;
     //볼 스피드
     public float ballSpeed;
+    public GameObject firstBall;
+    public bool firstBallIsSetted;
+    float shotBallDeleyTime;
+
+    #endregion 
     #region constant val
     //시작지점변수.
     const float START_X = -2.4f;
@@ -43,7 +57,7 @@ public class GameManager : MonoBehaviour
 
     const float StartBallPosX = 0;
     const float StartBallPosY = -4;
-
+    const float FinalLine = -3.145f;
     #endregion
     #endregion
 
@@ -66,21 +80,53 @@ public class GameManager : MonoBehaviour
 
     }
     #endregion
-    // Use this for initialization
+
     #region UnityEngine Overload Method
     void Start()
     {
         scoreMgr.iScore = 0;
         //         print("start");
-        InvokeRepeating("NextRound", 0, 10);
         boxPrefab = Resources.Load("Prefabs/box") as GameObject;
         ballPrefab = Resources.Load("Prefabs/Ball") as GameObject;
-        //NextRound();
+        arrow.SetActive(false);
+        ballCount = 5;
+        firstFalledBallPos = new Vector3(StartBallPosX, StartBallPosY+ballPrefab.GetComponent<CircleCollider2D>().radius);
+        ballPrefab.transform.position = firstFalledBallPos;
+        firstBall = Instantiate(ballPrefab);
+        moveScript = ballPrefab.GetComponent<move>();
+
+        guideLineScale = arrow.GetComponentInChildren<BigScale>();
+        shotBallDeleyTime = 0.2f;
+
+        InvokeRepeating("NextRound", 0, 10);
     }
     // Update is called once per frame
     void Update()
     {
+       if(Input.GetMouseButtonDown(0))
+        {
+            prePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, Input.mousePosition.z);
+            prePos = Camera.main.ScreenToWorldPoint(prePos);
+            arrow.transform.position = firstFalledBallPos;
+            arrow.SetActive(true);
+        }
+       else if(Input.GetMouseButton(0))
+        {
+            nowPos = new Vector3(Input.mousePosition.x, Input.mousePosition.y);
+            nowPos = Camera.main.ScreenToWorldPoint(nowPos);
 
+            float zRotateAngle = GetAngle(nowPos, prePos);
+            if(zRotateAngle > 30 && zRotateAngle < 150)
+                arrow.transform.rotation = Quaternion.Euler(0, 0, zRotateAngle);
+
+            float scaleFactor = Vector3.Magnitude( prePos - nowPos);
+            guideLineScale.ScaleBig(scaleFactor);
+            
+        }
+        else if(Input.GetMouseButtonUp(0))
+        {
+            ShotBall();
+        }
     }
     #endregion
 
@@ -126,9 +172,40 @@ public class GameManager : MonoBehaviour
     #endregion
 
     #region GameFunction
-    void AddBall()
+    void ShotBall()
     {
-        ballList.Add(Instantiate(ballPrefab));
+        arrowDirection = (prePos - nowPos).normalized;
+        firstBallIsSetted = false;
+
+        move scripts = firstBall.GetComponent<move>();
+        scripts.dir = arrowDirection;
+        scripts.Shot();
+
+        for(int i = 1;  i< ballCount; ++i)
+        {
+            StartCoroutine(MakeBallAndShoot(i * shotBallDeleyTime));
+        }
+        arrow.SetActive(false);
+       
+    }
+    IEnumerator MakeBallAndShoot(float delay)
+    {
+        print("makeBallAndShoot");
+        GameObject tmpBall;
+        ballPrefab.transform.position = firstBall.transform.position;
+        moveScript.dir = arrowDirection;
+
+        tmpBall = MonoBehaviour.Instantiate(ballPrefab);
+       
+        yield return new WaitForSeconds(delay);
+        tmpBall.GetComponent<move>().Shot();
+
+    }
+    public float GetAngle(Vector3 vStart, Vector3 vEnd)
+    {
+        Vector3 v = vEnd - vStart;
+
+        return Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg;
     }
     #endregion
 }

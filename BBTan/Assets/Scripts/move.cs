@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 
 public class move : MonoBehaviour {
 
@@ -6,19 +7,42 @@ public class move : MonoBehaviour {
     public float speed;
     public Vector3 dir;
 
-    private Vector3 pos;
-    private Vector3 lastPosition;
-    private LayerMask collisionLayer;
+    private static LayerMask collisionLayer;
     private CircleCollider2D myCollider;
+
+    public bool isFirst;
 	// Use this for initialization
 	void Start () {
-
         collisionLayer = LayerMask.GetMask("RayColliderObj");
         myCollider = GetComponent<CircleCollider2D>();
+        speed = 10;
     }
     // Update is called once per frame
     void Update () {
       
+    }
+    public void Shot()
+    {
+        
+        IsMoving = true;
+    }
+    public IEnumerator MoveToPointAndDestroy(Vector3 firstBallPoint, float speed)
+    {
+        Vector3 thisPos = transform.position;
+
+        Vector3 endPos = firstBallPoint;
+
+        float startPos = transform.position.y;
+        float rate = 1.0f / Mathf.Abs(thisPos.magnitude - endPos.magnitude) * speed;
+        float t = 0.0f;
+        while (t < 1.0f)
+        {
+            t += Time.deltaTime * rate;
+            
+            transform.position = Vector3.Lerp(thisPos, endPos, t); 
+            yield return 0;
+        }
+        Destroy(gameObject);
     }
     private void FixedUpdate()
     {
@@ -34,8 +58,18 @@ public class move : MonoBehaviour {
             if (hit.collider.name == "FinishLine" && IsMoving)
             {
                 print("FinishLine");
-                transform.position = new Vector3( hit.point.x,hit.point.y + myCollider.radius);
-                IsMoving = false;
+                if(!GameManager.Instance.firstBallIsSetted)
+                {
+                    transform.position = new Vector3(hit.point.x, hit.point.y + myCollider.radius);
+                    GameManager.Instance.firstFalledBallPos = transform.position;
+                    GameManager.Instance.firstBall = gameObject;
+                    GameManager.Instance.firstBallIsSetted = true;
+                    IsMoving = false;
+                }
+                else
+                {
+                    StartCoroutine(MoveToPointAndDestroy(GameManager.Instance.firstFalledBallPos,2));
+                }
             }
             //FinishLine이 아닐경우.
             else
@@ -57,4 +91,6 @@ public class move : MonoBehaviour {
         //rigidbd.MovePosition(transform.position + (dir * speed));
 
     }
+
+   
 }
