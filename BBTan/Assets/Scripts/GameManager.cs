@@ -17,7 +17,8 @@ public class GameManager : MonoBehaviour
     {
         IDLE,
         SHOOTING,
-        BLOCK_DOWN
+        BLOCK_DOWN,
+        GAMEOVER
     }
 
     GameObject ballPrefab;
@@ -25,23 +26,28 @@ public class GameManager : MonoBehaviour
 
     GameObject boxPrefab;
 
-
+    //게임 상태.
     public GAME_STATUS gameStatus;
-    #region val
+    //터치 컨트롤.
     public Vector2 nowPos, prePos;
+
+    //블록 리스트.
     [SerializeField]
     public List<GameObject> shapeList;
 
+
     #region ball Value
+    public bool AllBlockDownSucess;
+
+    public GameObject firstBall;
     public short ballCount;
+    public short ballComeBackCount;
     //첫 낙하지점.
     public Vector3 firstFalledBallPos;
     //볼 스피드
     public float ballSpeed;
-    public GameObject firstBall;
     public bool firstBallIsSetted;
-    float shotBallDeleyTime;
-
+    const float shotBallDeleyTime =  0.2f;
     #endregion 
     #region constant val
     //시작지점변수.
@@ -58,7 +64,6 @@ public class GameManager : MonoBehaviour
     const float StartBallPosX = 0;
     const float StartBallPosY = -4;
     const float FinalLine = -3.145f;
-    #endregion
     #endregion
 
     #region singletonPatton
@@ -84,67 +89,109 @@ public class GameManager : MonoBehaviour
     #region UnityEngine Overload Method
     void Start()
     {
-        scoreMgr.iScore = 0;
         //         print("start");
+        //프리팹 Read.
         boxPrefab = Resources.Load("Prefabs/box") as GameObject;
         ballPrefab = Resources.Load("Prefabs/Ball") as GameObject;
-        arrow.SetActive(false);
-        ballCount = 5;
-        firstFalledBallPos = new Vector3(StartBallPosX, StartBallPosY+ballPrefab.GetComponent<CircleCollider2D>().radius);
+
+        //초기 ball세팅값.
+        ballCount = 1;
+        firstFalledBallPos = new Vector3(StartBallPosX, StartBallPosY + ballPrefab.GetComponent<CircleCollider2D>().radius);
         ballPrefab.transform.position = firstFalledBallPos;
-        firstBall = Instantiate(ballPrefab);
         moveScript = ballPrefab.GetComponent<move>();
-
+        firstBall = Instantiate(ballPrefab);
+        //기타 세팅값.
+        arrow.SetActive(false);
         guideLineScale = arrow.GetComponentInChildren<BigScale>();
-        shotBallDeleyTime = 0.2f;
-
-        InvokeRepeating("NextRound", 0, 10);
+        gameStatus = GAME_STATUS.BLOCK_DOWN;
     }
     // Update is called once per frame
     void Update()
     {
-       if(Input.GetMouseButtonDown(0))
+        switch (gameStatus)
         {
-            prePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, Input.mousePosition.z);
-            prePos = Camera.main.ScreenToWorldPoint(prePos);
-            arrow.transform.position = firstFalledBallPos;
-            arrow.SetActive(true);
-        }
-       else if(Input.GetMouseButton(0))
-        {
-            nowPos = new Vector3(Input.mousePosition.x, Input.mousePosition.y);
-            nowPos = Camera.main.ScreenToWorldPoint(nowPos);
+            case GAME_STATUS.IDLE:
+                {
+                    if(AllBlockDownSucess)
+                    {
+                        if (Input.GetMouseButtonDown(0))
+                        {
+                            prePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, Input.mousePosition.z);
+                            prePos = Camera.main.ScreenToWorldPoint(prePos);
+                            arrow.transform.position = firstFalledBallPos;
+                            arrow.SetActive(true);
+                        }
+                        else if (Input.GetMouseButton(0))
+                        {
+                            nowPos = new Vector3(Input.mousePosition.x, Input.mousePosition.y);
+                            nowPos = Camera.main.ScreenToWorldPoint(nowPos);
 
-            float zRotateAngle = GetAngle(nowPos, prePos);
-            if(zRotateAngle > 30 && zRotateAngle < 150)
-                arrow.transform.rotation = Quaternion.Euler(0, 0, zRotateAngle);
+                            float zRotateAngle = GetAngle(nowPos, prePos);
+                            if (zRotateAngle > 15 && zRotateAngle < 165)
+                            {
+                                arrow.transform.rotation = Quaternion.Euler(0, 0, zRotateAngle);
+                                float scaleFactor = Vector3.Magnitude(prePos - nowPos);
+                                guideLineScale.ScaleBig(scaleFactor);
+                                arrowDirection = (prePos - nowPos).normalized;
+                            }
+                        }
+                        else if (Input.GetMouseButtonUp(0))
+                        {
+                            gameStatus = GAME_STATUS.SHOOTING;
+                            arrow.SetActive(false);
+                            ShotBall();
+                        }
+                    }
+                    break;
+                }
+            case GAME_STATUS.BLOCK_DOWN:
+                {
+                    print("nextRound IN Update");
+                    NextRound();
+                    gameStatus = GAME_STATUS.IDLE;
+                    AllBlockDownSucess = false;
+                    break;
+                }
+            case GAME_STATUS.SHOOTING:
+                {
+                    if (ballCount == ballComeBackCount)
+                    {
+                        gameStatus = GAME_STATUS.BLOCK_DOWN;
+                    }
+                    break;
+                }
+            case GAME_STATUS.GAMEOVER:
+                {
+                    for(int i = 0; i < shapeList.Count; ++i)
+                    {
+                        shapeList[i].AddComponent<Rigidbody2D>();
+                    }
 
-            float scaleFactor = Vector3.Magnitude( prePos - nowPos);
-            guideLineScale.ScaleBig(scaleFactor);
-            
-        }
-        else if(Input.GetMouseButtonUp(0))
-        {
-            ShotBall();
+                    break;
+                }
         }
     }
-    #endregion
 
-    #region Status_Method
-    void DecideStatus()
+    private void LateUpdate()
     {
-        //블록이 내려오지 않고있고 , 공이 멈춰있으면 IDLE Status
-
-        //공이 움직이고 있으면 Shoting Status.
-
-        //블록이 내려오고 있으면 BlockDown Status.
+        if(AllBlockDownSucess)
+        {
+            for(int i = 0; i < shapeList.Count; ++i)
+            {
+                if(shapeList[i].transform.position.y <= FinalLine)
+                {
+                    gameStatus = GAME_STATUS.GAMEOVER;
+                }
+            }
+        }
     }
     #endregion
+
     #region BlockControllMethod
     void NextRound()
     {
         //print("next");
-        scoreMgr.score.text = (++scoreMgr.iScore).ToString();
+        scoreMgr.NextScore();
         CreateRowBlock();
         BlockMoveDown();
     }
@@ -159,7 +206,6 @@ public class GameManager : MonoBehaviour
     }
     void BlockMoveDown()
     {
-        print("down");
         Block tmpScript;
 
         for (int i = 0; i < shapeList.Count; ++i)
@@ -167,32 +213,26 @@ public class GameManager : MonoBehaviour
             tmpScript = shapeList[i].GetComponent<Block>();
             StartCoroutine(tmpScript.MoveDown(tmpScript.transform, OFFSET, 1));
         }
-
     }
     #endregion
 
     #region GameFunction
+
     void ShotBall()
     {
-        arrowDirection = (prePos - nowPos).normalized;
-        firstBallIsSetted = false;
-
-        move scripts = firstBall.GetComponent<move>();
-        scripts.dir = arrowDirection;
-        scripts.Shot();
-
-        for(int i = 1;  i< ballCount; ++i)
+         firstBallIsSetted = false;
+        ballComeBackCount = 0;
+        Destroy(firstBall);
+        for (int i = 0;  i< ballCount; ++i)
         {
             StartCoroutine(MakeBallAndShoot(i * shotBallDeleyTime));
         }
-        arrow.SetActive(false);
-       
     }
     IEnumerator MakeBallAndShoot(float delay)
     {
         print("makeBallAndShoot");
         GameObject tmpBall;
-        ballPrefab.transform.position = firstBall.transform.position;
+        ballPrefab.transform.position = firstFalledBallPos;
         moveScript.dir = arrowDirection;
 
         tmpBall = MonoBehaviour.Instantiate(ballPrefab);

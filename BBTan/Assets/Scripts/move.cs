@@ -10,7 +10,6 @@ public class move : MonoBehaviour {
     private static LayerMask collisionLayer;
     private CircleCollider2D myCollider;
 
-    public bool isFirst;
 	// Use this for initialization
 	void Start () {
         collisionLayer = LayerMask.GetMask("RayColliderObj");
@@ -57,19 +56,19 @@ public class move : MonoBehaviour {
             //FinishLine일 경우.
             if (hit.collider.name == "FinishLine" && IsMoving)
             {
-                print("FinishLine");
                 if(!GameManager.Instance.firstBallIsSetted)
                 {
                     transform.position = new Vector3(hit.point.x, hit.point.y + myCollider.radius);
                     GameManager.Instance.firstFalledBallPos = transform.position;
-                    GameManager.Instance.firstBall = gameObject;
                     GameManager.Instance.firstBallIsSetted = true;
                     IsMoving = false;
+                    GameManager.Instance.firstBall = gameObject;
                 }
                 else
                 {
-                    StartCoroutine(MoveToPointAndDestroy(GameManager.Instance.firstFalledBallPos,2));
+                    StartCoroutine(MoveToPointAndDestroy(GameManager.Instance.firstFalledBallPos, 2));
                 }
+                GameManager.Instance.ballComeBackCount++;
             }
             //FinishLine이 아닐경우.
             else

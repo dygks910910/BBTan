@@ -140,7 +140,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   BlockDowning: 0
-  hp: 4
+  hp: 8
 --- !u!212 &212189987172858550
 SpriteRenderer:
   m_ObjectHideFlags: 1

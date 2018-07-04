@@ -16,7 +16,6 @@ public class ShapeHit : HitInterface
         if (hp <= 0)
         {
             GameManager.Instance.shapeList.Remove(obj);
-            print("destroy");
             destroyEffect();
             Destroy(obj);
         }
@@ -32,7 +31,6 @@ public class Block : MonoBehaviour {
     protected SpriteRenderer spRenderer;
     //hp에따라 색을 바꿔주기 위한 가중치
     //블럭이 내려오는중인지?
-    public bool BlockDowning;
     protected float hpWeight;
     public short hp;
     protected  HitInterface hit;
@@ -47,7 +45,6 @@ public class Block : MonoBehaviour {
     }
     public IEnumerator MoveDown(Transform thisTransform, float distance, float speed)
     {
-        BlockDowning = true;
         float startPos = thisTransform.position.y;
         float endPos = startPos - distance;
         float rate = 1.0f / Mathf.Abs(startPos - endPos) * speed;
@@ -60,7 +57,7 @@ public class Block : MonoBehaviour {
             thisTransform.position = pos;
             yield return 0;
         }
-        BlockDowning = false;
+        GameManager.Instance.AllBlockDownSucess |= true;
     }
 
     public virtual void Hit()
