@@ -7,6 +7,25 @@ public class ScoreManager : MonoBehaviour {
     public Text score;
     public short iScore;
 
+    #region singletonPatton
+    private static ScoreManager _Instance; 
+    public static ScoreManager Instance
+    {
+        get
+        {
+            if (_Instance == null)
+            {
+                _Instance = FindObjectOfType(typeof(ScoreManager)) as ScoreManager;
+                if (_Instance == null)
+                {
+                    print("no GameManager Class");
+                }
+            }
+            return _Instance;
+        }
+    }
+
+    #endregion
     // Use this for initialization
     public void NextScore()
     {

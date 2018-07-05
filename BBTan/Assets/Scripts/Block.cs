@@ -1,7 +1,7 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
 
 public abstract class HitInterface : MonoBehaviour
 {
@@ -26,6 +26,17 @@ public class ShapeHit : HitInterface
         }
     }
 }
+public class AddBallHit : HitInterface
+{
+    public override void Hit(ref short hp, ref float hpWeight, GameObject obj, SpriteRenderer renderer, Action destroyEffect)
+    {
+        print("hit Ball");
+        GameManager.Instance.shapeList.Remove(obj);
+        GameManager.Instance.AddBall();
+        Destroy(obj);
+    }
+}
+
 
 public class Block : MonoBehaviour {
     protected SpriteRenderer spRenderer;
@@ -34,6 +45,8 @@ public class Block : MonoBehaviour {
     protected float hpWeight;
     public short hp;
     protected  HitInterface hit;
+
+    const float FinalLine = -3.145f;
 
     public void CreateDestroyEffect()
     {
@@ -58,6 +71,11 @@ public class Block : MonoBehaviour {
             yield return 0;
         }
         GameManager.Instance.AllBlockDownSucess |= true;
+        if (transform.position.y <= FinalLine && this is Shape)
+        {
+            GameManager.Instance.GameOver();
+        }
+        
     }
 
     public virtual void Hit()
