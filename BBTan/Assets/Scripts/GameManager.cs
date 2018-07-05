@@ -6,6 +6,7 @@ using System.Linq;
 public class GameManager : MonoBehaviour
 {
     public GameObject gameOverUI;
+    public GameObject quitUI;
     #region Arrow
     public GameObject arrow;
     public BigScale guideLineScale;
@@ -25,7 +26,6 @@ public class GameManager : MonoBehaviour
     GameObject TriPrefab;
     GameObject addBallItem;
     move moveScript;
-
 
     //게임 상태.
     public GAME_STATUS gameStatus;
@@ -185,6 +185,23 @@ public class GameManager : MonoBehaviour
                     break;
                 }
         }
+        //if (Application.platform == RuntimePlatform.Android)
+        //{
+        //    if (Input.GetKey(KeyCode.Escape))
+        //    {
+        //        quitUI.SetActive(true);
+        //        Time.timeScale = 0;
+        //    }
+        //}
+        //else if(Application.platform == RuntimePlatform.WindowsEditor)
+        //{
+        //    if (Input.GetKey(KeyCode.Escape))
+        //    {
+        //        quitUI.SetActive(true);
+        //        Time.timeScale = 0;
+              
+        //    }
+        //}
     }
     #endregion
 
@@ -308,4 +325,6 @@ public class GameManager : MonoBehaviour
         addBallNum++;
     }
     #endregion
+
+    
 }
